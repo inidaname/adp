@@ -1,0 +1,19 @@
+{
+  "name": "adpmicroservice",
+  "version": "1.0.0",
+  "description": "Micro service for ADP",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adpnigeria/adpmicroservice.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adpnigeria/adpmicroservice/issues"
+  },
+  "homepage": "https://github.com/adpnigeria/adpmicroservice#readme"
+}
