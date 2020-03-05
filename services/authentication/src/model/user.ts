@@ -3,6 +3,7 @@ import validator from "mongoose-unique-validator";
 import bcrypt from "bcrypt-nodejs";
 import bcryptjs from 'bcryptjs';
 import { NextFunction } from "express";
+import { User } from "../../../../lib/interface/user";
 
 const userSchema: any = new mongoose.Schema({
     fullName: {
@@ -22,16 +23,27 @@ const userSchema: any = new mongoose.Schema({
     phoneNumber: {
         type: String,
         required: [true, `Please peovide a phone Number`]
+    },
+    status: {
+        type: String,
+        enum: [
+            'active',
+            'inactive',
+            'expired',
+            'deactivated'
+        ],
+        default: 'inactive'
     }
 }, {
     timestamps: true,
-    collection: 'Member'
+    // collection: 'Member',
+    toJSON: {virtuals: true},
+    toObject: {virtuals: true}
 });
 
 userSchema.plugin(validator);
 
 userSchema.pre('save', function (next: NextFunction) {
-    console.log(userSchema.paths)
     if (this.password && !this.isModified('password')) {
         return next();
     }
@@ -44,4 +56,4 @@ userSchema.pre('save', function (next: NextFunction) {
     });
 });
 
-export default mongoose.model('Member', userSchema)
+export default mongoose.model<User>('Member', userSchema)

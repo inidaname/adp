@@ -7,6 +7,6 @@ routes.all('/', function(req, res) {
     res.status(200).json({message: `You are on ADP`});
 });
 
-routes.route('/member').post(member.createUser);
+routes.route('/member').post(member.createUser).get(member.getAllUser);
 
 export default routes;

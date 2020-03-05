@@ -9,7 +9,7 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import logger from "morgan";
 import routes from "./src/routes";
-import { options } from "../../util/config";
+import db from "../../util/config";
 
 
 // mongoose.Promise = global.Promise;
@@ -17,12 +17,7 @@ import { options } from "../../util/config";
 const app = express();
 
 dotenv.config({path: '.env'});
-
-mongoose.connect(process.env.mongodb, options).then(
-  (value) => console.info("MongoDB connected succesfully")
-).catch((err) => console.log(`Connetion Error:`, err))
-
-
+db
 app.use(logger('dev'));
 
 app.set('port', process.env.RegPORT);

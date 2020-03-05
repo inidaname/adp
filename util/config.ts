@@ -1,8 +1,7 @@
 import mongoose, { ConnectionOptions } from "mongoose";
 import dotenv from 'dotenv';
-dotenv.config({path: '.env'});
 
-export const options: ConnectionOptions = {
+const options: ConnectionOptions = {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
@@ -17,3 +16,11 @@ export const options: ConnectionOptions = {
   family: 4, // Use IPv4, skip trying IPv6
   useUnifiedTopology: true
 };
+
+dotenv.config({path: '.env'});
+
+mongoose.connect(process.env.mongodb, options)
+.then((value) => console.info("MongoDB connected succesfully"))
+.catch((err) => console.log(`Connetion Error:`, err));
+
+export default mongoose;
