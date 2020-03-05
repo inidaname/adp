@@ -1,4 +1,4 @@
-import { userModel } from "../model";
+import { userModel } from "../../../../models";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt-nodejs";
 import {createToken} from "../../../../lib/helpers";
@@ -20,7 +20,7 @@ export async function createUser(req: Request, res: Response): Promise<Response>
 
         const token = await createToken(data);
 
-        return res.status(200).json({ data, token, message: `User created` })
+        return res.status(201).json({ data, token, message: `User created` })
     } catch (error) {
         return res.status(error.status || 500).json({ message: error });
     }
@@ -34,7 +34,10 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
             throw { status: 400, message: `Please provide login details` };
         }
 
-        const findUser = await userModel.findOne({ $or: [{ email: username }, { phoneNumber: username }] }).select('+password');
+        const findUser = await userModel
+        .findOne({ $or: [{ email: username }, { phoneNumber: username }] })
+        .and([{ $or: [{ userStatus: 'active' }, { userStatus: 'inactive' }, {userStatus: 'expired'},] }])
+        .select('+password');
 
         if (!findUser) {
             throw { status: 400, message: `Login details did not match` };
@@ -55,15 +58,5 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
         return res.status(200).json({data, token, message: `Logged in successfully`})
     } catch (error) {
         return res.status(error.status || 500).json({ message: error.message });
-    }
-}
-
-export async function getAllUser(req: Request, res: Response): Promise<Response> {
-    try {
-        const findAll = await userModel.find();
-
-        return res.status(200).json({data: findAll, message: `Found them all`});
-    } catch (error) {
-        return res.status(error.status || 500).json({message: error.message});
     }
 }
