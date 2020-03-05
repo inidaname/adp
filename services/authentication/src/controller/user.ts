@@ -5,13 +5,16 @@ import { User } from "../../../../lib/interface/user";
 
 export async function createUser(req: Request, res: Response): Promise<Response> {
     try {
-        console.log('You came')
 
         const create = await userModel.create({ ...req.body });
 
+        if (!create) {
+            throw {status: 400, message: `Whty`}
+        }
+
         return res.status(200).json({ data: create, message: `User created` })
     } catch (error) {
-        return res.status(error.status || 500).json({ message: error.message });
+        return res.status(error.status || 500).json({ message: error });
     }
 }
 
@@ -34,9 +37,12 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
             throw { status: 400, message: `Login details did not match` };
         }
 
-        delete findUser.password
+        const data = findUser.toJSON();
+        delete data.password
+        delete data._id
+        delete data.__v
 
-        return res.status(200).json({data: findUser, message: `Logged in successfully`})
+        return res.status(200).json({data: data, message: `Logged in successfully`})
     } catch (error) {
         return res.status(error.status || 500).json({ message: error.message });
     }

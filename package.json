@@ -2,7 +2,7 @@
     "name": "adpmicroservice",
     "version": "1.0.0",
     "description": "Micro service for ADP",
-    "main": "dist/services/registration/app.js",
+    "main": "dist/services/authentication/app.js",
     "scripts": {
         "start": "npm run serve",
         "build": "&& npm run build-ts && npm run lint && npm run copy-static-assets",

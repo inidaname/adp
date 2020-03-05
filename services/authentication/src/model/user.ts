@@ -36,24 +36,29 @@ const userSchema: any = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    // collection: 'Member',
+    collection: 'Member',
     toJSON: {virtuals: true},
     toObject: {virtuals: true}
 });
 
 userSchema.plugin(validator);
 
-userSchema.pre('save', function (next: NextFunction) {
+userSchema.pre('save', async function (next: NextFunction) {
     if (this.password && !this.isModified('password')) {
         return next();
     }
-    bcrypt.hash(this.password, '10', (err, hash) => {
-        if (err) {
-            next(err);
-        }
-		this.password = hash;
-		next();
-    });
+    const salt = await bcrypt.genSaltSync(10)
+    if (!salt) {
+        next('failed to salt');
+    }
+    const hash = await bcrypt.hashSync(this.password, salt);
+    if (!hash) {
+        next('failed to hash')
+    }
+
+    this.password = hash;
+    next();
+
 });
 
 export default mongoose.model<User>('Member', userSchema)

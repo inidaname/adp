@@ -8,5 +8,6 @@ routes.all('/', function(req, res) {
 });
 
 routes.route('/member').post(member.createUser).get(member.getAllUser);
+routes.route('/login').post(member.loginUser);
 
 export default routes;
