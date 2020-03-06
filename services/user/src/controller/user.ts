@@ -1,5 +1,7 @@
-import { userModel } from "../../../../models";
+import { userModel, resetModel } from "../../../../models";
 import { Request, Response } from "express";
+import { sendMail, createToken } from "../../../../lib/helpers";
+import { User } from "../../../../lib/interface/user";
 
 export async function getUserById(req: Request, res: Response): Promise<Response> {
     try {
@@ -104,7 +106,7 @@ export async function deactivateUser(req: Request, res: Response): Promise<Respo
             throw { status: 404, message: `Could not find user` };
         }
 
-        return res.status(201).json({data: deactivate, message: `User deleted successfully`});
+        return res.status(201).json({ data: deactivate, message: `User deleted successfully` });
 
     } catch (error) {
         return res.status(error.status || 500).json({ message: error.message });
@@ -112,5 +114,45 @@ export async function deactivateUser(req: Request, res: Response): Promise<Respo
 }
 
 export async function changePassword(req: Request, res: Response): Promise<Response> {
-    
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            throw { status: 404, message: `User with provided details does not exist` };
+        }
+
+
+        const findEmail = [await userModel.findOne({ $or: [{ email: id }, { phoneNumber: id }] })
+            .and([{ $or: [{ userStatus: 'active' }, { userStatus: 'inactive' }, { userStatus: 'expired' },] }]),
+            await userModel.findById(id)
+            .and([{ $or: [{ userStatus: 'active' }, { userStatus: 'inactive' }, { userStatus: 'expired' },] }])];
+
+        Promise.all(findEmail)
+            .then(
+                (value) => {
+                    value.map(async (user, i, a) => {
+                        if (user) {
+                            const token = await createToken(user);
+                            const createReset = await resetModel.create({userId: user._id, token});
+                            if (createReset) {
+                                const msgBody = `
+                                    <p>Hello ${user.fullName},</p>
+                                    <p>Here is a link to reset your email https://adp.ng/r/${token}</p>
+                                    <p> Thank You</p>
+                                `
+                                await sendMail('Password reset', msgBody, user.email);
+
+                                
+                                return res.status(200).json({message: `Email for change of password sent`, token});
+                            }
+                        }
+                    })
+                },
+                (err) => {
+                    throw{status: 400, message: err}
+                }
+            )
+    } catch (error) {
+        return res.status(error.status || 500).json({ message: error.message });
+    }
 }
