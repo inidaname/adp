@@ -156,3 +156,21 @@ export async function changePassword(req: Request, res: Response): Promise<Respo
         return res.status(error.status || 500).json({ message: error.message });
     }
 }
+
+export async function confirmReset(req: Request, res: Response): Promise<Response> {
+    try {
+        const {token} = req.params;
+
+        if (!token) {
+            throw {status: 404, message: `Password renewal does not exist`};
+        }
+
+        const check = await resetModel.findOne({token}).lean().select('-__v').exec();
+
+        if (!check) {
+            throw {status: 404, message: `Password renewal does not exist`};
+        }
+    } catch (error) {
+        return res.status(error.status || 500).json({message: error.message});
+    }
+}

@@ -13,6 +13,7 @@ const resetSchema = new mongoose.Schema({
         type: String,
         enum: [
             'active',
+            'reset',
             'inactive'
         ],
         defualt: 'active'
