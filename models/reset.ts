@@ -22,7 +22,9 @@ const resetSchema = new mongoose.Schema({
 },
 {
     timestamps: true,
-    collection: 'Reset'
+    collection: 'Reset',
+    toJSON: {virtuals: true},
+    toObject: {virtuals: true}
 });
 
 export default mongoose.model('Reset', resetSchema);

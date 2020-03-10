@@ -2,6 +2,7 @@ import { userModel, resetModel } from "../../../../models";
 import { Request, Response } from "express";
 import { sendMail, createToken } from "../../../../lib/helpers";
 import { User } from "../../../../lib/interface/user";
+import { ResetInterface } from "../../../../lib/interface/reset";
 
 export async function getUserById(req: Request, res: Response): Promise<Response> {
     try {
@@ -165,7 +166,7 @@ export async function checkReset(req: Request, res: Response): Promise<Response>
             throw { status: 404, message: `Password renewal does not exist` };
         }
 
-        const check = await resetModel
+        const check: ResetInterface = await resetModel
             .findOneAndUpdate({ $and: [{ requestStatus: 'active' }, { token }] }, { requestStatus: 'touched' }, { new: true })
             .lean().select('-__v').exec();
 
@@ -187,7 +188,7 @@ export async function confirmReset(req: Request, res: Response): Promise<Respons
             throw { status: 404, message: `Password renewal does not exist` };
         }
 
-        const check = await resetModel
+        const check: ResetInterface = await resetModel
             .findOneAndUpdate({ $and: [{ requestStatus: 'touched' }, { token }] }, { requestStatus: 'done' }, { new: true })
             .lean().select('-__v').exec();
 
