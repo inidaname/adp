@@ -113,7 +113,7 @@ export async function deactivateUser(req: Request, res: Response): Promise<Respo
     }
 }
 
-export async function changePassword(req: Request, res: Response): Promise<Response> {
+export async function requestPassword(req: Request, res: Response): Promise<Response> {
     try {
         const { id } = req.params;
 
@@ -124,7 +124,7 @@ export async function changePassword(req: Request, res: Response): Promise<Respo
 
         const findEmail = [await userModel.findOne({ $or: [{ email: id }, { phoneNumber: id }] })
             .and([{ $or: [{ userStatus: 'active' }, { userStatus: 'inactive' }, { userStatus: 'expired' },] }]),
-            await userModel.findById(id)
+        await userModel.findById(id)
             .and([{ $or: [{ userStatus: 'active' }, { userStatus: 'inactive' }, { userStatus: 'expired' },] }])];
 
         Promise.all(findEmail)
@@ -133,7 +133,7 @@ export async function changePassword(req: Request, res: Response): Promise<Respo
                     value.map(async (user, i, a) => {
                         if (user) {
                             const token = await createToken(user);
-                            const createReset = await resetModel.create({userId: user._id, token});
+                            const createReset = await resetModel.create({ userId: user._id, token });
                             if (createReset) {
                                 const msgBody = `
                                     <p>Hello ${user.fullName},</p>
@@ -142,14 +142,14 @@ export async function changePassword(req: Request, res: Response): Promise<Respo
                                 `
                                 await sendMail('Password reset', msgBody, user.email);
 
-                                
-                                return res.status(200).json({message: `Email for change of password sent`, token});
+
+                                return res.status(200).json({ message: `Email for change of password sent`, token });
                             }
                         }
                     })
                 },
                 (err) => {
-                    throw{status: 400, message: err}
+                    throw { status: 400, message: err }
                 }
             )
     } catch (error) {
@@ -157,20 +157,57 @@ export async function changePassword(req: Request, res: Response): Promise<Respo
     }
 }
 
-export async function confirmReset(req: Request, res: Response): Promise<Response> {
+export async function checkReset(req: Request, res: Response): Promise<Response> {
     try {
-        const {token} = req.params;
+        const { token } = req.params;
 
         if (!token) {
-            throw {status: 404, message: `Password renewal does not exist`};
+            throw { status: 404, message: `Password renewal does not exist` };
         }
 
-        const check = await resetModel.findOne({token}).lean().select('-__v').exec();
+        const check = await resetModel
+            .findOneAndUpdate({ $and: [{ requestStatus: 'active' }, { token }] }, { requestStatus: 'touched' }, { new: true })
+            .lean().select('-__v').exec();
 
         if (!check) {
-            throw {status: 404, message: `Password renewal does not exist`};
+            throw { status: 404, message: `Password renewal does not exist` };
         }
+
+        return res.status(200).json({ message: `Reset found`, data: check });
     } catch (error) {
-        return res.status(error.status || 500).json({message: error.message});
+        return res.status(error.status || 500).json({ message: error.message });
     }
 }
+
+export async function confirmReset(req: Request, res: Response): Promise<Response> {
+    try {
+        const { token } = req.params;
+
+        if (!token) {
+            throw { status: 404, message: `Password renewal does not exist` };
+        }
+
+        const check = await resetModel
+            .findOneAndUpdate({ $and: [{ requestStatus: 'touched' }, { token }] }, { requestStatus: 'done' }, { new: true })
+            .lean().select('-__v').exec();
+
+        if (!check) {
+            throw { status: 404, message: `Password renewal does not exist` };
+        }
+
+        const changePass: User = await userModel
+            .findByIdAndUpdate({ id: check.id }, { password: req.body.password })
+            .lean().select('-__v').exec();
+
+        if (!changePass) {
+            throw { status: 404, message: `User does not exist` };
+        }
+
+        await sendMail('Password Changed', 'Your password was changed successfully', changePass.email);
+
+        return res.status(200).json({ message: `Reset found`, changed: check, data: changePass });
+    } catch (error) {
+        return res.status(error.status || 500).json({ message: error.message });
+    }
+}
+

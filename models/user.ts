@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import validator from "mongoose-unique-validator";
 import bcrypt from "bcrypt-nodejs";
 import bcryptjs from 'bcryptjs';
 import { NextFunction } from "express";
 import { User } from "../lib/interface/user";
 
-const userSchema: any = new mongoose.Schema({
+const userSchema: Schema = new mongoose.Schema({
     fullName: {
         type: String,
         required: [true, `Please provide your Full Name`]
@@ -13,7 +13,8 @@ const userSchema: any = new mongoose.Schema({
     email: {
         type: String,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     password: {
         type: String,
@@ -22,7 +23,8 @@ const userSchema: any = new mongoose.Schema({
     },
     phoneNumber: {
         type: String,
-        required: [true, `Please peovide a phone Number`]
+        required: [true, `Please peovide a phone Number`],
+        unique: true
     },
     userStatus: {
         type: String,
@@ -43,22 +45,52 @@ const userSchema: any = new mongoose.Schema({
 
 userSchema.plugin(validator);
 
-userSchema.pre('save', async function (next: NextFunction) {
-    if (this.password && !this.isModified('password')) {
+userSchema.pre<mongoose.Query<any>>('save', async function (next: NextFunction) {
+    const query: any = this;
+    if (query.password && !query.isModified('password')) {
         return next();
     }
     const salt = await bcrypt.genSaltSync(10)
     if (!salt) {
         next('failed to salt');
     }
-    const hash = await bcrypt.hashSync(this.password, salt);
+    const hash = await bcrypt.hashSync(query.password, salt);
     if (!hash) {
         next('failed to hash')
     }
 
-    this.password = hash;
+    query.password = hash;
     next();
+});
 
+userSchema.methods.checkPassword = function (password: string): Promise<boolean> {
+    const passwordHash = this.password;
+    return new Promise((resolve, reject) => {
+        bcrypt.compare(password, passwordHash, (err, same) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(same);
+          });
+    })
+}
+
+userSchema.pre<mongoose.Query<any>>('updateOne', async function (next: NextFunction) {
+    const query: any = this;
+    if (query.password && !query.isModified('password')) {
+        return next();
+    }
+    const salt = await bcrypt.genSaltSync(10)
+    if (!salt) {
+        next('failed to salt');
+    }
+    const hash = await bcrypt.hashSync(query.password, salt);
+    if (!hash) {
+        next('failed to hash')
+    }
+
+    query.password = hash;
+    next();
 });
 
 export default mongoose.model<User>('Member', userSchema)

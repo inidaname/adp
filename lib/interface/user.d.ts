@@ -6,4 +6,5 @@ export interface User extends Document {
     password: string;
     phoneNumber: string;
     status: string;
+    checkPassword? (password: string): Promise<boolean>;
 }

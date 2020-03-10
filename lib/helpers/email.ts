@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 dotenv.config({path: '.env'});
 
 export async function sendMail(sub: string, body: string, recipient: string){
- // Generate test SMTP service account from ethereal.email
-  // Only needed if you don't have a real mail account for testing
 
   // create reusable transporter object using the default SMTP transport
   let transporter = nodemailer.createTransport({

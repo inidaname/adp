@@ -43,7 +43,7 @@ export async function loginUser(req: Request, res: Response): Promise<Response> 
             throw { status: 400, message: `Login details did not match` };
         }
 
-        const matchPassword = await bcrypt.compareSync(password, findUser.password);
+        const matchPassword = await findUser.checkPassword(password)
         if (!matchPassword) {
             throw { status: 400, message: `Login details did not match` };
         }
