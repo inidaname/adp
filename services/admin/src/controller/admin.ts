@@ -27,7 +27,7 @@ export async function getAdminByUserId(
     }
 
     const admin = await adminModel
-      .findOne({ userId: id })
+      .findOne({ $or: [{ userId: id }, { id }] })
       .lean()
       .select('-__v')
       .exec();
@@ -35,7 +35,77 @@ export async function getAdminByUserId(
       throw { message: `could not find admin`, status: 404 };
     }
 
-    return res.status(200).json({ message: `` });
+    return res.status(200).json({ message: ``, data: admin });
+  } catch (error) {
+    return res.status(error.status || 500).json({ message: error.message });
+  }
+}
+
+export async function updateAdmin(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw { message: `Could not find admin`, status: 404 };
+    }
+
+    let options = req.body;
+    const updates: any = {};
+
+    for (const option of Object.keys(options)) {
+      updates[option] = options[option];
+    }
+
+    const admin = await adminModel
+      .findByIdAndUpdate(id, updates, { new: true })
+      .lean()
+      .select('-__v')
+      .exec();
+
+    if (!admin) {
+      throw { message: `Could not find admin`, status: 404 };
+    }
+
+    return res.status(200).json({ message: `Data updated`, data: admin });
+  } catch (error) {
+    return res.status(error.status || 500).json({ message: error.message });
+  }
+}
+
+export async function deactivateAdmin(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      throw { message: `Could not find admin`, status: 404 };
+    }
+
+    const admin = await adminModel
+      .findOneAndUpdate(
+        {
+          $and: [
+            { $or: [{ userId: id }, { id }] },
+            { $not: { adminStatus: 'deactivated' } }
+          ]
+        },
+        { adminStatus: 'deactivated' },
+        { new: true }
+      )
+      .lean()
+      .select('-__v')
+      .exec();
+
+    if (!admin) {
+      throw { message: `Could not find Admin`, status: 404 };
+    }
+
+    return res.status(200).json({ message: `Admin deleted`, data: admin });
   } catch (error) {
     return res.status(error.status || 500).json({ message: error.message });
   }
