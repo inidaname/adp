@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"payment/models"
 	"net/http"
-	"fmt"
+	"log"
 )
 
 type Payments struct {
@@ -30,14 +30,13 @@ func CreatePayment(w http.ResponseWriter, r *http.Request) {
 	ctx, _ := context.WithTimeout(context.Background(),10*time.Second)
 
 	var payment models.Payment
-
+	
 	_ = json.NewDecoder(r.Body).Decode(&payment)
-	defer r.Body.Close()
+	insert, err := connection.InsertOne(ctx, payment)
 
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
-	insert, _ := connection.InsertOne(ctx, payment)
 	json.NewEncoder(w).Encode(insert)
 }
 
