@@ -16,7 +16,11 @@ func main() {
 	m := middleware.CommonMiddleware
 	router.Use(m)
 	_, err := startWebServer(port)
-	fmt.Println(err)
+
+	if err != nil {
+		panic(err)
+	}
+
 	http.ListenAndServe(":3000", r)
 }
 

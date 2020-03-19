@@ -2,28 +2,35 @@ package middleware
 
 import (
 	"net/http"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"time"
 	"context"
-	"fmt"
-	"log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 )
 
-func init() {
-	ctx, _ := context.WithTimeout(context.Background(),10*time.Second)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = client.Ping(ctx, readpref.Primary())
-	if err != nil {
-		log.Fatal(err)
-	}
-	client.Database("adp").Collection("Payment")
 
-	fmt.Println("Connected to Mongodb")
+
+func MongoDBC() *mongo.Collection {
+	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+
+	if err != nil {
+		panic(err)
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
+	log.Println("MongoDB connected")
+	if err != nil {
+		panic(err)
+	}
+
+	// defer client.Disconnect(ctx)
+
+	adpdb := client.Database("adp")
+	payment := adpdb.Collection("payment")
+
+	return payment
 }
 
 func CommonMiddleware(next http.Handler) http.Handler {

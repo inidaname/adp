@@ -1,13 +1,17 @@
 package controllers
 
 import (
-	"time"
 	"context"
 	"encoding/json"
-	"go.mongodb.org/mongo-driver/mongo"
-	"payment/models"
-	"net/http"
 	"log"
+	"net/http"
+	"payment/middleware"
+	"payment/models"
+
+	// "go.mongodb.org/mongo-driver/bson"
+	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Payments struct {
@@ -18,7 +22,6 @@ type Status struct {
 	Status bool
 }
 
-var connection *mongo.Collection
 
 func PingAPI(w http.ResponseWriter, r *http.Request) {
 	// ctx, _ := context.WithTimeout(context.Background(), 10*time.Second
@@ -27,16 +30,39 @@ func PingAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePayment(w http.ResponseWriter, r *http.Request) {
-	ctx, _ := context.WithTimeout(context.Background(),10*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 
+	r.ParseForm()
+	body := json.NewDecoder(r.Body)
 	var payment models.Payment
-	
-	_ = json.NewDecoder(r.Body).Decode(&payment)
-	insert, err := connection.InsertOne(ctx, payment)
+	// payment.ID = bson.NewObjectId()
+	err := body.Decode(&payment)
 
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
+	
+	paymentDB := middleware.MongoDBC()
+	
+
+	insert, err := paymentDB.InsertOne(ctx, payment)
+
+	if err != nil {
+		log.Println(err)
+	}
+
 	json.NewEncoder(w).Encode(insert)
+}
+
+func GetPaymentByID(w http.ResponseWriter, r *http.Request) {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	params := mux.Vars(r)
+	id := params["id"]
+
+	paymentDB := middleware.MongoDBC()
+
+	getpayment, err := paymentDB.FindOne(ctx.P filter).Decode(&result)
+
+	log.Println(id, ctx)
 }
 
