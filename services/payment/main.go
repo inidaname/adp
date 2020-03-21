@@ -2,19 +2,14 @@ package main
 
 import (
 	"net/http"
-	"github.com/gorilla/mux"
 	"fmt"
-	"payment/middleware"
 	"payment/routes"
 )
 
 func main() {
 	fmt.Println("Working with Go")
 	port := 3000
-	var router = mux.NewRouter()
 	r := routes.Router()
-	m := middleware.CommonMiddleware
-	router.Use(m)
 	_, err := startWebServer(port)
 
 	if err != nil {

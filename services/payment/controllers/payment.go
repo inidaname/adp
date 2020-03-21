@@ -8,9 +8,9 @@ import (
 	"payment/middleware"
 	"payment/models"
 
-	// "go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
-
+    "go.mongodb.org/mongo-driver/mongo/options"
 	"github.com/gorilla/mux"
 )
 
@@ -54,14 +54,48 @@ func CreatePayment(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(insert)
 }
 
+func GetAllPayments(w http.ResponseWriter, r *http.Request)  {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	var results []*models.Payment
+
+	findOptions := options.Find()
+	findOptions.SetLimit(2)
+	
+	paymentDB := middleware.MongoDBC()
+	
+
+	cur, _ := paymentDB.Find(ctx, bson.D{}, findOptions)
+
+	for cur.Next(context.TODO()) {
+    
+		// create a value into which the single document can be decoded
+		var elem models.Payment
+		err := cur.Decode(&elem)
+		if err != nil {
+			log.Fatal(err)
+		}
+	
+		results = append(results, &elem)
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+	
+	// Close the cursor once finished
+	cur.Close(context.TODO())
+	
+	json.NewEncoder(w).Encode(results)
+}
+
 func GetPaymentByID(w http.ResponseWriter, r *http.Request) {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	params := mux.Vars(r)
 	id := params["id"]
 
-	paymentDB := middleware.MongoDBC()
+	// paymentDB := middleware.MongoDBC()
 
-	getpayment, err := paymentDB.FindOne(ctx.P filter).Decode(&result)
+	// getpayment, err := paymentDB.FindOne(ctx.P filter).Decode(&result)
 
 	log.Println(id, ctx)
 }
